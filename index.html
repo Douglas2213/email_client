@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TechMail — SMTP Email Client</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- LEFT RAIL -->
+  <div class="rail">
+    <div class="rail-logo">✉</div>
+    <div class="rail-icon active" title="Mail">📧</div>
+    <div class="rail-divider"></div>
+    <div class="rail-icon" title="Contacts">👤</div>
+    <div class="rail-icon" title="Calendar">📅</div>
+    <div class="rail-icon" title="Search">🔍</div>
+    <div class="rail-spacer"></div>
+    <div class="rail-icon" title="SMTP Settings" onclick="openSmtp()">⚙️</div>
+    <div class="rail-icon" title="Help">❓</div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div>
+        <div class="brand-name">TechMail</div>
+        <div class="brand-tag">SMTP Client</div>
+      </div>
+    </div>
+
+    <div id="connBadge" class="conn-badge">
+      <div class="conn-dot"></div>
+      <span>Not connected</span>
+    </div>
+
+    <div class="section-label">Mailbox</div>
+    <div class="nav-item active" onclick="showView('compose', this)">
+      <span class="icon">✏️</span>
+      <span class="label">Compose</span>
+    </div>
+    <div class="nav-item" onclick="showView('sent', this)">
+      <span class="icon">📤</span>
+      <span class="label">Sent</span>
+      <span class="badge" id="sentBadge">0</span>
+    </div>
+    <div class="nav-item" onclick="showView('drafts', this)">
+      <span class="icon">📝</span>
+      <span class="label">Drafts</span>
+      <span class="badge" id="draftBadge" style="background:#4a566a;">0</span>
+    </div>
+
+    <div class="section-label">Settings</div>
+    <div class="nav-item" onclick="openSmtp()">
+      <span class="icon">🔌</span>
+      <span class="label">SMTP Providers</span>
+    </div>
+    <div class="nav-item">
+      <span class="icon">❓</span>
+      <span class="label">Help</span>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- COMPOSE VIEW -->
+    <div id="view-compose" class="view active">
+      <div class="toolbar">
+        <div class="toolbar-title"><span class="icon">✏️</span> New Message</div>
+        <button class="btn btn-ghost" onclick="saveDraft()">💾 Save Draft</button>
+        <button class="btn btn-danger" onclick="clearForm()">✕ Clear</button>
+      </div>
+
+      <div class="compose-area">
+        <div class="field-row">
+          <div class="field-label">To <span class="req">*</span></div>
+          <input class="field-input" id="toField" type="email" placeholder="recipient@example.com" />
+        </div>
+        <div class="split-row">
+          <div class="field-row">
+            <div class="field-label">CC</div>
+            <input class="field-input" id="ccField" type="email" placeholder="cc@example.com" />
+          </div>
+          <div class="field-row">
+            <div class="field-label">BCC</div>
+            <input class="field-input" id="bccField" type="email" placeholder="bcc@example.com" />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field-label">Subject <span class="req">*</span></div>
+          <input class="field-input" id="subjectField" placeholder="Email subject line" />
+        </div>
+        <div class="select-row">
+          <div class="select-group">
+            <span class="select-label">Content Type</span>
+            <select class="styled-select" id="contentType">
+              <option>Plain Text</option>
+              <option>HTML</option>
+              <option>Markdown</option>
+            </select>
+          </div>
+          <div class="select-group">
+            <span class="select-label">Priority</span>
+            <select class="styled-select" id="priority">
+              <option>Normal</option>
+              <option>High</option>
+              <option>Low</option>
+            </select>
+          </div>
+        </div>
+        <div class="body-section">
+          <div class="body-label">Message Body <span class="req">*</span></div>
+          <textarea class="body-input" id="bodyField" placeholder="Write your message here..."></textarea>
+        </div>
+      </div>
+
+      <div id="notifBar" class="notif-bar hidden"></div>
+
+      <div class="action-bar">
+        <button class="btn btn-send" id="sendBtn" onclick="sendEmail()">
+          <span id="sendLabel">📨 Send Email</span>
+        </button>
+        <button class="btn btn-template" onclick="applyTemplate('welcome')">+ Welcome Template</button>
+        <button class="btn btn-template" onclick="applyTemplate('followup')">+ Follow-up Template</button>
+      </div>
+    </div>
+
+    <!-- SENT VIEW -->
+    <div id="view-sent" class="view">
+      <div class="toolbar">
+        <div class="toolbar-title"><span class="icon">📤</span> Sent Messages</div>
+        <button class="btn btn-ghost" onclick="loadSent()">↻ Refresh</button>
+      </div>
+      <div id="sentList" class="email-list"></div>
+      <div id="sentEmpty" class="empty-state">
+        <div class="empty-icon">📭</div>
+        <div class="empty-text">No sent messages yet</div>
+      </div>
+    </div>
+
+    <!-- DRAFTS VIEW -->
+    <div id="view-drafts" class="view">
+      <div class="toolbar">
+        <div class="toolbar-title"><span class="icon">📝</span> Drafts</div>
+        <button class="btn btn-ghost" onclick="loadDrafts()">↻ Refresh</button>
+      </div>
+      <div id="draftList" class="email-list"></div>
+      <div id="draftsEmpty" class="empty-state">
+        <div class="empty-icon">📝</div>
+        <div class="empty-text">No drafts saved</div>
+      </div>
+    </div>
+
+  </div><!-- /.main -->
+
+  <!-- SMTP MODAL -->
+  <div class="modal-overlay" id="smtpModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">⚙️ SMTP Configuration</div>
+        <button class="modal-close" onclick="closeSmtp()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="provider-chips">
+          <button class="chip" onclick="fillProvider('gmail')">Gmail</button>
+          <button class="chip" onclick="fillProvider('outlook')">Outlook</button>
+          <button class="chip" onclick="fillProvider('yahoo')">Yahoo</button>
+          <button class="chip" onclick="fillProvider('custom')">Custom</button>
+        </div>
+        <div class="m-row">
+          <div class="m-field">
+            <div class="m-label">SMTP Host</div>
+            <input class="m-input" id="smtpHost" placeholder="smtp.gmail.com" />
+          </div>
+          <div class="m-field">
+            <div class="m-label">Port</div>
+            <input class="m-input" id="smtpPort" placeholder="587" type="number" />
+          </div>
+        </div>
+        <div class="m-field">
+          <div class="m-label">Username / Email</div>
+          <input class="m-input" id="smtpUser" placeholder="you@example.com" type="email" />
+        </div>
+        <div class="m-field">
+          <div class="m-label">Password / App Token</div>
+          <input class="m-input" id="smtpPass" type="password" placeholder="••••••••••••" />
+          <div class="m-hint">Gmail users: use an <a href="https://myaccount.google.com/apppasswords" target="_blank">App Password</a>, not your regular password.</div>
+        </div>
+        <div class="m-field">
+          <div class="m-label">From Name (optional)</div>
+          <input class="m-input" id="smtpFrom" placeholder="Your Name" />
+        </div>
+        <div id="testResult" class="test-result hidden"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="testSmtp()">🔌 Test Connection</button>
+        <button class="btn btn-ghost" onclick="closeSmtp()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveSmtp()">Save &amp; Connect</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
